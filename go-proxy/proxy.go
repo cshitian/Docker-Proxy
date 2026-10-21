@@ -429,6 +429,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// GitHub 前缀代理（二次开发）：路径里嵌完整网址的请求走 GitHub 转发，
+	// 位于 ACL 之后、注册表路由之前；其余请求保持原有注册表逻辑不变。
+	if target, ok := githubRelayTarget(r.URL); ok {
+		p.serveGitHubRelay(w, r, target)
+		return
+	}
+
 	reg := p.resolveRegistry(r)
 	if reg == nil {
 		http.Error(w, "no upstream registry configured", http.StatusBadGateway)
